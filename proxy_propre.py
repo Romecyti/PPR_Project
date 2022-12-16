@@ -8,6 +8,25 @@ import socket
 import re
 from _thread import start_new_thread
 
+def ReadHTMLFile(path, dict):
+    file = open(path, "r")
+    html = file.read()
+
+    for i in dict:
+        html = html.replace("{{" + i + "}}", dict[i])
+
+    return html
+
+def SendHTMLToClient(path, socket_client, dict):
+    html = ReadHTMLFile(path, dict)
+    reponse = "HTTP/1.1 200 OK\n"\
+              "Connection: Keep-Alive\n"\
+              "Content-Length: " + str(len(html)) + "\n"\
+              "Content-Type: text/html; charset=utf-8\n"\
+              "\n"
+    reponse += html
+    socket_client.sendall(reponse.encode())
+
 #fonction qui créait la socket principale du proxy
 def CreateProxysSocket(adresse_ip_proxy, port_socket_proxy) :
     tsap_proxy = (adresse_ip_proxy, port_socket_proxy)
@@ -143,6 +162,10 @@ def TraitementEnteteRequeteHTTP(requete) :
 
     nom_serveur = re.match(r"Host: (?P<nom_serveur>[^\s:]+)?(:\d+)?", requete[1]).group('nom_serveur')
 
+    # Si localhost, on renvoie directement le resultat
+    if(nom_serveur == "localhost"):
+        return (requete, 8080, nom_serveur)
+
     #on vient récupérer les informations importante situé sur la première ligne
     (serveur_methode_requete, num_port_serveur, serveur_file_access) = re.match(r"(?P<method>[^\s]+) ([^\s]*"+nom_serveur+r")(:(?P<num_Port>\d+))?(?P<file_access>[^\s]+)? ([^\s]+)",requete[0]).group('method','num_Port','file_access')
     if num_port_serveur == None:
@@ -204,6 +227,14 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     requete, num_port_serveur, nom_serveur = TraitementEnteteRequeteHTTP(requete)
     suite_requete = b'' #si la requette est une requete POST, alors il y aura des arguments suplémentaire 
     probleme_requete = False
+
+    if nom_serveur == "localhost":
+        dict = {"configuration_port": "80", 
+                "configuration_words_to_replace": "test,test3", 
+                "configuration_url_blacklist": "minecraft.fr", 
+                "configuration_resources_blacklist": "text/html"}
+        SendHTMLToClient("admin.html", socket_requete, dict)
+        return
 
     #on regarde maintenant si c'est une requete GET ou POST
     if re.search('POST', requete.decode(), flags=re.IGNORECASE) :
