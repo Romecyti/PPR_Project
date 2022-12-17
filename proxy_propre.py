@@ -7,6 +7,7 @@
 import socket
 import re
 from _thread import start_new_thread
+import ssl
 
 def ReadHTMLFile(path, dict):
     file = open(path, "r")
@@ -19,10 +20,10 @@ def ReadHTMLFile(path, dict):
 
 def SendHTMLToClient(path, socket_client, dict):
     html = ReadHTMLFile(path, dict)
-    reponse = "HTTP/1.1 200 OK\n"\
-              "Connection: Keep-Alive\n"\
-              "Content-Length: " + str(len(html)) + "\n"\
-              "Content-Type: text/html; charset=utf-8\n"\
+    reponse = "HTTP/1.1 200 OK\r\n"\
+              "Connection: Keep-Alive\r\n"\
+              "Content-Length: " + str(len(html)) + "\r\n"\
+              "Content-Type: text/html; charset=utf-8\r\n"\
               "\n"
     reponse += html
     socket_client.sendall(reponse.encode())
@@ -188,24 +189,6 @@ def TraitementEnteteRequeteHTTP(requete) :
 
     return (requete, num_port_serveur, nom_serveur)
 
-#fonction qui traite l'entete d'une requete Connect et retourne une requete a transmettre au serveur ainsi que le numéro de port du serveur et son nom
-def TraitementEnteteRequeteHTTPS(requete) :
-    requete = requete.decode().split("\n") #sépare l'entete de la requête selon les lignes
-
-    #on vient récupérer les informations du numéro de port et du nom du site sur la ligne contenant HOST
-    for e in requete :
-        if not re.match(r"Host:*", e, flags=re.IGNORECASE) :
-            nom_serveur, num_port_serveur  = re.match(r"Host: (?P<nom_serveur>[^\s:]+)?(:(?P<num_port>\d+))?", requete[1]).group('nom_serveur','num_port')
-
-    if num_port_serveur == None :
-        probleme_lecture_entete = True
-    else :
-        probleme_lecture_entete = False
-
-    proxys_response = "HTTP/1.0 200 OK" 
-
-    return proxys_response.encode(), num_port_serveur, nom_serveur, probleme_lecture_entete
-
 #fonction qui créer une socket de connexion à un serveur d'après son numéro de port et son nom et retourne cette socket ainsi que la réussite de la création
 def CreationSocketServeur(num_port_serveur, nom_serveur) :
     probleme_creation_socket_serveur = False
@@ -269,7 +252,6 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 if taille_reponse < len(reponse) :
                     reponse = reponse[0:taille_reponse]
 
-
                 #ici on peut faire traitement sur données réceptionnées 
                 #on peut faire des changement dans le texte et tout ça 
                 #attention a ne pas oubier de modifier la taille des données en réception si modification !!!!!!!!! (taille du message global moins taille entete message)
@@ -287,51 +269,6 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
 
     return 
 
-#fonction qui s'occupe de faire le lien TLS entre le serveur web et le navigateur
-def ReceptionReponseTLS (socket_serveur, socket_requete):
-    while 1 :
-        try :
-            message_serveur = socket_serveur.recv(1024)
-            print("reponse serveurTLS : ", message_serveur, "\n")
-            socket_requete.sendall(message_serveur)
-        except Exception:
-            break 
-
-    return
-
-#fonction qui fait le traitement des requetes HTTPS
-def TraitementRequeteHTTPS (requete, socket_requete : socket.socket) :
-    #on va créer une socket connectée au serveur web
-    reponse_proxys, num_port_serveur, nom_serveur, probleme_lecture_entete = TraitementEnteteRequeteHTTPS(requete)
-
-    if not probleme_lecture_entete :
-        socket_serveur, probleme_creation_socket_serveur = CreationSocketServeur(num_port_serveur, nom_serveur)
-        if not probleme_creation_socket_serveur :
-            #on renvoie l'aquitement de la requete
-            print("reponse proxy : \n", reponse_proxys)
-            socket_requete.sendall(reponse_proxys) #aquitement message à créer
-
-
-            #une fois la requete acceptée, on va faire le pont entre le navigateur et le serveur web
-            socket_requete.settimeout(100.0)
-            socket_serveur.settimeout(100.0)
-
-            start_new_thread(ReceptionReponseTLS, (requete, socket_requete,))
-
-            while 1 :
-                try :
-                    message_navigateur = socket_requete.recv(1024)
-                    print("requete navigateur : ", message_navigateur, "\n")
-                    socket_serveur.sendall(message_navigateur)
-                except Exception:
-                    break
-            
-            socket_serveur.close()
-        #end if
-    #end if
-    return
-
-
 #fonction qui fait le traitement des requete donnée sur une socket 
 def TraitementRequete(socket_requete) :
     (requete, probleme_requete) = LectureRequete(socket_requete)
@@ -346,8 +283,7 @@ def TraitementRequete(socket_requete) :
         if (re.search('CONNECT', requete.decode())) :
             #dans ce cas, c'est le porotocole https
             #pour le moment, on ne le traite pas 
-
-            TraitementRequeteHTTPS(requete, socket_requete)
+            print('requete https : \n', requete, '\n')
         else :
 
             #ici on peut faire filtrage sur ressources acceptées
