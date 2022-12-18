@@ -1,17 +1,60 @@
 #!usr/bin/python3
-
 #copyright 2022 : written by MARCHAND Célestin, PIERRET Alexandre and COQUERON Solal 
-
-#scrypt décrivant un proxy créé dans le cadre du projet de la matière "protocole et programmation réseaux" de la 1ère année du master ISICG à L'université de Limoges
+#script décrivant un proxy créé dans le cadre du projet de la matière "protocole et programmation réseaux" de la 1ère année du master ISICG à L'université de Limoges
 
 import socket
 import re
 from _thread import start_new_thread
-import ssl
 
 tableau_site_interdit = []
 tableau_type_ressource_interdites = []
 
+def LectureConfigArray(path):
+
+    file = open(path, "r")
+    lines = file.read().split("\n")
+    values = {}
+
+    for line in lines:
+        key_values = line.split(":")
+        values[key_values[0]] = CsvSplit(key_values[1], ",")
+
+    return values
+
+def LectureConfigString(path):
+
+    file = open(path, "r")
+    lines = file.read().split("\n")
+    values = {}
+
+    for line in lines:
+        key_values = line.split(":")
+        values[key_values[0]] = key_values[1]
+
+    return values
+    
+def CsvSplit(str, sep):
+
+    array = []
+    current = ""
+    str += '\n'
+
+    for i in range(len(str)):
+    
+        if str[i - 1] == '\\' and str[i] == sep:
+            current += sep
+        elif str[i - 1] != '\\' and str[i] == sep:
+            array.append(current)
+            current = ""
+        elif i + 1 < len(str) and str[i] == '\\' and str[i + 1] == sep:
+            continue
+        elif str[i] == '\n':
+            array.append(current)
+            current = ""
+        else:
+            current += str[i]
+
+    return array
 
 def ReadHTMLFile(path, dict):
     file = open(path, "r")
@@ -227,7 +270,6 @@ def FiltreAcceptantServeur(entete_requete) :
 #fonction qui effectue un filtre sur les ressources acceptées et renvoies un booleen à false si la requete ne peut être envoyer (i.e. aucune ressources demandé n'est accepté)
 def FiltreAcceptantRessources(entete_requete) :
     requete_autoriser = True
-
     entete_requete = entete_requete.decode().split("\n")
 
     num_ligne_ressource = -1
@@ -274,19 +316,23 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     suite_requete = b'' #si la requette est une requete POST, alors il y aura des arguments suplémentaire 
     probleme_requete = False
 
-    #a revoir car il faut faire un autre traitement lorsque c'est une requete post qui est envoyée depuis la page admin
-    if nom_serveur == "localhost":
-        dict = {"configuration_port": "80", 
-                "configuration_words_to_replace": "test,test3", 
-                "configuration_url_blacklist": "minecraft.fr", 
-                "configuration_resources_blacklist": "text/html"}
-        SendHTMLToClient("admin.html", socket_requete, dict)
-        return
+    # Si requete GET
+    # decode provoque une erreur c'est pour ca que c'est fait comme ca
+    if (re.search('GET', requete.decode())) :
+        if nom_serveur == "localhost":
+                configs = LectureConfigString("options.config")
+                dict = {"configuration_port": configs["port"], 
+                        "configuration_words_to_replace": configs["words_to_replace"], 
+                        "configuration_url_blacklist": configs["url_blacklist"], 
+                        "configuration_resources_blacklist": configs["resources_blacklist"]}
+                SendHTMLToClient("admin.html", socket_requete, dict)
+                return
 
-    #on regarde maintenant si c'est une requete GET ou POST
-    if re.search('POST', requete.decode(), flags=re.IGNORECASE) :
+    #Si requete POST - ya une erreur ici
+    if (re.search('POST', requete.decode())) :
         #dans ce cas, c'est une requete POST et l'on doit donc lire les arguments supplémentaire de la requête
         #ceux-ci se trouvent dans un bloc supplémentaire de la même forme qu'une requête
+        print("test")
         suite_requete, probleme_requete = LectureArgumentsRequetePost(requete, socket_requete)
     #end if
 
@@ -321,7 +367,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 #attention a ne pas oubier de modifier la taille des données en réception si modification !!!!!!!!! (taille du message global moins taille entete message)
 
                 #on envoie ensuite toute la réponse au navigateur
-               #print(reponse, "\n\n")
+                #print(reponse, "\n\n")
                 socket_requete.sendall(reponse)
             else :
                 print("problème lecture entete réponse\n\n")
@@ -360,7 +406,6 @@ def TraitementRequete(socket_requete) :
                 socket_requete.close()
                 return
 
-
             #dans ce cas, c'est une requete http
             TraitementRequeteHTTP( requete, socket_requete)
 
@@ -382,8 +427,6 @@ def main(adresse_ip_proxy = "", port_socket_proxy = 8080) :
     #end while
 
     socket_proxy.close()
-
-
     return 0
 
 

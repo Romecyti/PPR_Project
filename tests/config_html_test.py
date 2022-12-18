@@ -47,5 +47,5 @@ dico = {"configuration_port": "80",
         "configuration_url_blacklist": "minecraft.fr", 
         "configuration_resources_blacklist": "text/html"}
 
-print(ReadHTMLFile("admin.html", dico))
-print(LectureConfig("options.config"))
+print(ReadHTMLFile("../html/admin.html", dico))
+print(LectureConfig("../options.config"))
