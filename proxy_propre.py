@@ -9,6 +9,10 @@ import re
 from _thread import start_new_thread
 import ssl
 
+tableau_site_interdit = []
+tableau_type_ressource_interdites = []
+
+
 def ReadHTMLFile(path, dict):
     file = open(path, "r")
     html = file.read()
@@ -203,6 +207,65 @@ def CreationSocketServeur(num_port_serveur, nom_serveur) :
 
     return (socket_serveur, probleme_creation_socket_serveur)
 
+#fonction qui effectue un filtre sur le nom du serveur web
+def FiltreAcceptantServeur(entete_requete) :
+    bool_requete_accepter = True
+
+    nom_serveur = ""
+    tab_requete = entete_requete.decode().split("\n")
+    for e in tab_requete :
+        if re.match(r'Host:[^\s\S]', e) :
+            nom_serveur = re.search(r'Host: (?P<nom_serveur>[^\s:]+)?(:\d+)?', e).group('nom_serveur')
+
+    for e in tableau_site_interdit :
+        if re.match(e, nom_serveur):
+            bool_requete_accepter = False
+
+
+    return bool_requete_accepter
+
+#fonction qui effectue un filtre sur les ressources acceptées et renvoies un booleen à false si la requete ne peut être envoyer (i.e. aucune ressources demandé n'est accepté)
+def FiltreAcceptantRessources(entete_requete) :
+    requete_autoriser = True
+
+    entete_requete = entete_requete.decode().split("\n")
+
+    num_ligne_ressource = -1
+    for i in range(len(entete_requete)) :
+        if re.match(r'Accept:[\s\S]+', entete_requete[i]) :
+            num_ligne_ressource = i
+            break
+
+    #on s'assure d'avoir trouvé la ligne des ressources, sinon il n'y à pas de précision donc on refuse la requete
+    if num_ligne_ressource == -1 :
+        return "\n".join(entete_requete).encode(), False
+
+    #on fait maintenant un traitement sur la lignes des ressources
+    tableau_ressources_demander, suite_ligne = re.search(r'Accept: (?P<ressources>[^;]+)?(?P<suiteligne>[\s\S])?', entete_requete[num_ligne_ressource]).group('ressources','suiteligne')
+    tableau_ressources_demander = tableau_ressources_demander.split(",")
+
+    tableau_ressources_accepter = []
+    for ressource in tableau_ressources_demander :
+        ressource_interdites = False
+        for e in tableau_type_ressource_interdites :
+            if re.match(r'[\s\S]+/' + e ) :
+                ressource_interdites = True
+                break
+        if not ressource_interdites :
+            tableau_ressources_accepter.append(ressource)
+
+    #maintenant que le traitement est fait, si aucune ressource n'a été accepté, on refuse la requete
+    if len(tableau_ressources_accepter) < 1 :
+        return "\n".join(entete_requete).encode(), False
+
+    #sinon on va reconstruire la requete avec les bonnes ressources
+    ressources_accepter = ",".join(tableau_ressources_accepter)
+    entete_requete[num_ligne_ressource] = "Accept: " + ressources_accepter + suite_ligne
+
+    entete_requete = "\n".join(entete_requete)
+
+    return entete_requete.encode(), requete_autoriser
+
 #fonction qui fait le traitement des requetes HTTP
 def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     #on va faire les traitements nécessaires pour nettoyer la requete et enlever les infos inutile pour le serveur 
@@ -211,6 +274,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     suite_requete = b'' #si la requette est une requete POST, alors il y aura des arguments suplémentaire 
     probleme_requete = False
 
+    #a revoir car il faut faire un autre traitement lorsque c'est une requete post qui est envoyée depuis la page admin
     if nom_serveur == "localhost":
         dict = {"configuration_port": "80", 
                 "configuration_words_to_replace": "test,test3", 
@@ -274,7 +338,10 @@ def TraitementRequete(socket_requete) :
     (requete, probleme_requete) = LectureRequete(socket_requete)
 
     #ici on peut faire filtrage sur url
-    #ne pas oublier de renvoyer une erreur si le site n'est pas accepté
+    if not FiltreAcceptantServeur(requete) :
+        #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!!!!!!!!
+        socket_requete.close()
+        return
 
     #on regarde si la lecture de la requete s'est déroulé normalement
     if not probleme_requete :
@@ -287,6 +354,12 @@ def TraitementRequete(socket_requete) :
         else :
 
             #ici on peut faire filtrage sur ressources acceptées
+            requete, requeteAccepter = FiltreAcceptantRessources(requete)
+            if not requeteAccepter :
+                #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!!!!!!!!
+                socket_requete.close()
+                return
+
 
             #dans ce cas, c'est une requete http
             TraitementRequeteHTTP( requete, socket_requete)
@@ -296,7 +369,6 @@ def TraitementRequete(socket_requete) :
     #le traitement de la requete est finit, on peut fermer la socket et reccomencer la boucle
     socket_requete.close()
     return
-
 
 #fonction décrivant le proxy
 def main(adresse_ip_proxy = "", port_socket_proxy = 8080) :
