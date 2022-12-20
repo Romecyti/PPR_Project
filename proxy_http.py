@@ -138,7 +138,6 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
             ressource = requete_first_line[1]
             if(len(requete_first_line) == 3):
                 if(ressource == "/proxy_config"):
-                    print("Requete GET : \n\tPage de configuration localhost:8080/proxy_config\n")
                     configuration = proxy_config.LectureConfigString("options.config")
                     dict = {"configuration_port": configuration["port"], 
                             "configuration_words_to_replace": configuration["words_to_replace"], 
@@ -162,7 +161,6 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
             ressource = requete_first_line[1]
             if(len(requete_first_line) == 3):
                 if(ressource == "/proxy_config"):
-                    print("Requete POST : \n\tPage de configuration localhost:8080/proxy_config\n")
                     # Si envoie de configuration
                     taille_config_param = len(decoded_arguments_requete)
                     if(taille_config_param >= 7 and decoded_arguments_requete[1] == "Content-Disposition: form-data; name=\"configuration\""):
@@ -205,10 +203,10 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 #print(reponse, "\n\n")
                 socket_requete.sendall(reponse)
             else :
-                print("problème lecture entete réponse\n\n")
+                print("problème lecture entete réponse\n")
             #end if
         else :
-            print("problème création socket serveur\n\n")
+            print("problème création socket serveur\n")
         #end if
     #end if
     return 
