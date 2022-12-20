@@ -60,7 +60,7 @@ def FiltreBlacklistServeur(entete_requete) :
     blacklisted_url = proxy_config.LectureConfigArray("options.config")["server_blacklist"]
 
     for e in tab_requete :
-        if re.match(r'Host:[^\s\S]', e) :
+        if re.match(r'Host:[\s\S]*', e) :
             nom_serveur = re.search(r'Host: (?P<nom_serveur>[^\s:]+)?(:\d+)?', e).group('nom_serveur')
 
     for e in blacklisted_url :

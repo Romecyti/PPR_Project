@@ -1,4 +1,5 @@
 import proxy_http
+from _thread import start_new_thread
 
 #############################################
 #                                           #
@@ -11,8 +12,8 @@ def main(adresse_ip_proxy = "", port_socket_proxy = 8080) :
     #début d'écoute des requêtes faites au proxy
     while 1 :
         (socket_requete, tsap_requete) = socket_proxy.accept() #retourne une socket et le tsap associé a celle-ci (inutile ici) lorsqu'une connexion à lieu sur le port
-        #start_new_thread(TraitementRequete, (socket_requete,))
-        proxy_http.TraitementRequete(socket_requete)
+        start_new_thread(proxy_http.TraitementRequete, (socket_requete,))
+        #proxy_http.TraitementRequete(socket_requete)
     #end while
 
     socket_proxy.close()
