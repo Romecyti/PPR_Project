@@ -129,7 +129,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                     configuration = proxy_config.LectureConfigString("options.config")
                     dict = {"configuration_port": configuration["port"], 
                             "configuration_words_to_replace": configuration["words_to_replace"], 
-                            "configuration_url_blacklist": configuration["url_blacklist"], 
+                            "configuration_server_blacklist": configuration["server_blacklist"], 
                             "configuration_resources_blacklist": configuration["resources_blacklist"]}
                     proxy_html.SendHTMLToClient("admin.html", socket_requete, dict)
                     return
@@ -189,7 +189,7 @@ def TraitementRequete(socket_requete) :
     (requete, probleme_requete) = proxy_tcp.LectureRequete(socket_requete)
 
     #ici on peut faire filtrage sur url
-    if not proxy_filtres.FiltreAcceptantServeur(requete) :
+    if not proxy_filtres.FiltreBlacklistServeur(requete) :
         #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!!!!!!!!
         socket_requete.close()
         return

@@ -50,14 +50,14 @@ def FiltreBlacklistRessources(entete_requete) :
 
 #############################################
 #                                           #
-#          FiltreAcceptantServeur           #
+#          FiltreBlacklistServeur           #
 #                                           #
 #############################################
-def FiltreAcceptantServeur(entete_requete) :
+def FiltreBlacklistServeur(entete_requete) :
     accept = True
     nom_serveur = ""
     tab_requete = entete_requete.decode().split("\n")
-    blacklisted_url = proxy_config.LectureConfigArray("options.config")["url_blacklist"]
+    blacklisted_url = proxy_config.LectureConfigArray("options.config")["server_blacklist"]
 
     for e in tab_requete :
         if re.match(r'Host:[^\s\S]', e) :

@@ -42,11 +42,13 @@
             }
 
             label {
-                padding-top: 5px;
-                padding-left: 10px;
-                padding-right: 10px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                text-align: center;
+                margin-right: 10px;
                 border-radius: 10px;
-                margin-right: 20px;
+                width: 200px;
+                height: 50px;
                 background-color: orange;
             }
 
@@ -107,8 +109,8 @@
             <!-- Url à bloquer -->
             <div class="info">(!) Format : url1,url2,...</div>
             <div class="line">
-                <label>Url à bloquer</label> 
-                <textarea id="configuration_url_blacklist" rows="5" cols="60">{{configuration_url_blacklist}}</textarea>
+                <label>Serveur à bloquer</label> 
+                <textarea id="configuration_server_blacklist" rows="5" cols="60">{{configuration_server_blacklist}}</textarea>
             </div>
 
             <!-- Ressource à bloquer -->
@@ -132,12 +134,12 @@
                 
                 let configuration_port = document.querySelector("#configuration_port").value;
                 let configuration_words_to_replace = document.querySelector("#configuration_words_to_replace").value;
-                let configuration_url_blacklist = document.querySelector("#configuration_url_blacklist").value;
+                let configuration_server_blacklist = document.querySelector("#configuration_server_blacklist").value;
                 let configuration_resources_blacklist = document.querySelector("#configuration_resources_blacklist").value;
 
                 configuration_text += "port:" + configuration_port + "\n";
                 configuration_text += "words_to_replace:" + configuration_words_to_replace + "\n";
-                configuration_text += "url_blacklist:" + configuration_url_blacklist + "\n";
+                configuration_text += "server_blacklist:" + configuration_server_blacklist + "\n";
                 configuration_text += "resources_blacklist:" + configuration_resources_blacklist + "\n";
 
                 let form_data = new FormData();
