@@ -53,6 +53,7 @@ def FiltreBlacklistRessources(entete_requete) :
 #          FiltreBlacklistServeur           #
 #                                           #
 #############################################
+#fonction qui effectue un filtre sur le nom du serveur web
 def FiltreBlacklistServeur(entete_requete) :
     accept = True
     nom_serveur = ""
@@ -68,3 +69,64 @@ def FiltreBlacklistServeur(entete_requete) :
             accept = False
 
     return accept
+
+#############################################
+#                                           #
+#           FiltreSuppressionMots           #
+#                                           #
+#############################################
+#fonction qui effectue la suppression des mots voulu par l'utilisateur
+def FiltreSuppressionMots(corps_requete : bytearray) :
+    words_to_delete = proxy_config.LectureConfigArray("options.config")["words_to_delete"]
+
+    for word in words_to_delete :
+        corps_requete = re.sub(word.encode(), b'', corps_requete)
+
+    return corps_requete
+
+#############################################
+#                                           #
+#          FiltreRemplacementMots           #
+#                                           #
+#############################################
+#fonction qui effectue le remplacement des mots voulu par l'utilisateur
+def FiltreRemplacementMots(corps_requete : bytearray):
+    words_to_replace = proxy_config.LectureConfigArray("options.config")["words_to_replace"]
+
+    #on s'assure que la taille du tableau soit bien un multiple de 2 
+    if (len(words_to_replace) % 2) == 1 :
+        words_to_replace.append("")
+
+    for i in range(0,len(words_to_replace), 2) :
+        corps_requete = re.sub(words_to_replace[i].encode(), words_to_replace[i+1].encode(), corps_requete)
+
+    return corps_requete
+
+#############################################
+#                                           #
+#            AppelFiltresSurMots            #
+#                                           #
+#############################################
+#fonction qui eeffectue l'appel au fonction de remplacement et de suppression des mots et modifie ensuite l'entête pour faire correspondre la taille de la réponse a la taille après modification
+def CallFiltre(requete : bytearray) : 
+    entete_requete, corps_requete = re.search(rb'(?P<entete>[\s\S]+\r\n\r\n)?(?P<corps>[\s\S]+)?', requete).group('entete', 'corps')
+    
+    #cas si la réponse ne contient que une entete
+    if corps_requete == None :
+        return requete
+
+    #sinon, alors la réponse contient bien des données et on peut les modifier
+    corps_requete = FiltreSuppressionMots(corps_requete)
+    corps_requete = FiltreRemplacementMots(corps_requete)
+
+    #on doit maintenant modifier l'indication de taille des données située dans l'entete
+    entete_requete = entete_requete.split(b'\n')
+
+    for i in range(len(entete_requete)) :
+        if re.match(rb'Content-Length:[\s\S]+', entete_requete[i]) :
+            entete_requete[i] = b'Content-Length: ' + str(len(corps_requete)).encode() + b'\r'
+            break
+    
+    entete_requete = b'\n'.join(entete_requete)
+
+    return (entete_requete + corps_requete)

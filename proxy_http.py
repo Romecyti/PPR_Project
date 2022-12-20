@@ -199,9 +199,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 if taille_reponse < len(reponse) :
                     reponse = reponse[0:taille_reponse]
 
-                #ici on peut faire traitement sur données réceptionnées 
-                #on peut faire des changement dans le texte et tout ça 
-                #attention a ne pas oubier de modifier la taille des données en réception si modification !!!!!!!!! (taille du message global moins taille entete message)
+                reponse = proxy_filtres.CallFiltre(reponse)
 
                 #on envoie ensuite toute la réponse au navigateur
                 #print(reponse, "\n\n")
@@ -221,7 +219,7 @@ def TraitementRequete(socket_requete) :
 
     #ici on peut faire filtrage sur url
     if not proxy_filtres.FiltreBlacklistServeur(requete) :
-        #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!!!!!!!!
+        #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!! 
         socket_requete.close()
         return
 
