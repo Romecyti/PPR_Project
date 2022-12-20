@@ -29,7 +29,10 @@ def FiltreBlacklistRessources(entete_requete) :
     tableau_ressources_demander, suite_ligne = re.search(r'Accept: (?P<ressources>[^;]+)?(?P<suiteligne>[\s\S])?', entete_requete[num_ligne_ressource]).group('ressources','suiteligne')
     tableau_ressources_demander = tableau_ressources_demander.split(",")
 
-    # Est ce que les ressources sont accepté ?
+    if suite_ligne == None :
+        suite_ligne = ""
+
+    # Est ce que les ressources sont acceptées ?
     tableau_ressources_accepter = []
     for ressource in tableau_ressources_demander :
         ressource_interdites = False
@@ -46,7 +49,7 @@ def FiltreBlacklistRessources(entete_requete) :
 
     #sinon on va reconstruire la requete avec les bonnes ressources
     ressources_accepter = ",".join(tableau_ressources_accepter)
-    entete_requete[num_ligne_ressource] = "Accept: " + ressources_accepter
+    entete_requete[num_ligne_ressource] = "Accept: " + ressources_accepter + suite_ligne
     entete_requete = "\n".join(entete_requete)
 
     return entete_requete.encode(), requete_autoriser
