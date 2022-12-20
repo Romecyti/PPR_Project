@@ -20,6 +20,10 @@ def LectureConfigString(path):
 
     return values
     
+def WriteConfigString(path, str):
+    file = open(path, "w")
+    file.write(str)
+
 def CsvSplit(str, sep):
     array = []
     current = ""

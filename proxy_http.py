@@ -108,6 +108,18 @@ def TraitementEnteteRequeteHTTP(requete) :
 
     return (encoded_requete_http, num_port_serveur, nom_serveur)
 
+def SendPostResult(socket_requete, result):
+
+    encoded_result = result.encode()
+
+    post_reponse = "HTTP/1.1 200 OK\n"
+    post_reponse += "Content-Length: " + str(len(encoded_result)) + "\n"
+    post_reponse += "Content-Type: text/html\n"
+    post_reponse += result + "\n"
+
+    socket_requete.sendall(post_reponse.encode())
+    return
+
 #fonction qui fait le traitement des requetes HTTP
 def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     #on va faire les traitements nécessaires pour nettoyer la requete et enlever les infos inutile pour le serveur 
@@ -118,18 +130,20 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
 
     # Si requete GET
     if (re.search('GET', requete.decode())):
-        # Si localhost et proxy_config
+
+         # Si c'est une requête de proxy_config
         if nom_serveur == "localhost":
             array_requete = requete.decode().split("\n")
             requete_first_line = array_requete[0].split(" ")
+            ressource = requete_first_line[1]
             if(len(requete_first_line) == 3):
-                ressource = requete_first_line[1]
                 if(ressource == "/proxy_config"):
-                    print("Requete : \n\tPage de configuration localhost:8080/proxy_config\n")
+                    print("Requete GET : \n\tPage de configuration localhost:8080/proxy_config\n")
                     configuration = proxy_config.LectureConfigString("options.config")
                     dict = {"configuration_port": configuration["port"], 
                             "configuration_words_to_replace": configuration["words_to_replace"], 
-                            "configuration_server_blacklist": configuration["server_blacklist"], 
+                            "configuration_words_to_delete": configuration["words_to_delete"], 
+                            "configuration_server_blacklist": configuration["server_blacklist"],
                             "configuration_resources_blacklist": configuration["resources_blacklist"]}
                     proxy_html.SendHTMLToClient("admin.html", socket_requete, dict)
                     return
@@ -139,8 +153,25 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
         #dans ce cas, c'est une requete POST et l'on doit donc lire les arguments supplémentaire de la requête
         #ceux-ci se trouvent dans un bloc supplémentaire de la même forme qu'une requête
         arguments_requete, probleme_requete = LectureArgumentsRequetePost(requete, socket_requete)
-        return
-    #end if
+        decoded_arguments_requete = arguments_requete.decode().replace("\r\n", "\n").split("\n")
+        
+        # Si c'est une requête de proxy_config
+        if nom_serveur == "localhost":
+            array_requete = requete.decode().split("\n")
+            requete_first_line = array_requete[0].split(" ")
+            ressource = requete_first_line[1]
+            if(len(requete_first_line) == 3):
+                if(ressource == "/proxy_config"):
+                    print("Requete POST : \n\tPage de configuration localhost:8080/proxy_config\n")
+                    # Si envoie de configuration
+                    taille_config_param = len(decoded_arguments_requete)
+                    if(taille_config_param >= 7 and decoded_arguments_requete[1] == "Content-Disposition: form-data; name=\"configuration\""):
+                        config_param_value = "\n".join(decoded_arguments_requete[3:len(decoded_arguments_requete) - 3])
+                        proxy_config.WriteConfigString("options.config", config_param_value)
+                        SendPostResult(socket_requete, "yes")
+                    else:
+                        SendPostResult(socket_requete, "no")
+                    return
 
     #on regarde s'il y a eu un problème dans la lecture des arguments de la requete POST
     #(si jamais on avait une requete GET, alors cela ne changera pas la requete de base)

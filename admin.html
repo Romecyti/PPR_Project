@@ -3,7 +3,6 @@
     <head>
         <meta charset="utf-8">
         <title>Administration Proxy</title>
-
         <style>
             html {
                 padding-left: 20%;
@@ -101,6 +100,13 @@
                 <label>Texte à remplacer</label> 
                 <textarea id="configuration_words_to_replace" rows="5" cols="60">{{configuration_words_to_replace}}</textarea>
             </div>
+
+            <!-- Mot à supprimer -->
+            <div class="info">(!) Format : mot_à_supprimer...</div>
+            <div class="line">
+                <label>Texte à remplacer</label> 
+                <textarea id="configuration_words_to_delete" rows="5" cols="60">{{configuration_words_to_delete}}</textarea>
+            </div>
         </div>
 
         <h1>Blacklist</h1>
@@ -122,39 +128,47 @@
         </div>
 
         <!-- Bouton d'envoi de configuration -->
-        <h1></h1>
+        <h1 id="result"></h1>
         <button id="submit">Mettre à jour</button>
 
         <script>
             var configuration_text = "";
-
             document.querySelector("#submit").addEventListener("click", function()
             {
                 configuration_text = "";
                 
                 let configuration_port = document.querySelector("#configuration_port").value;
                 let configuration_words_to_replace = document.querySelector("#configuration_words_to_replace").value;
+                let configuration_words_to_delete = document.querySelector("#configuration_words_to_delete").value;
                 let configuration_server_blacklist = document.querySelector("#configuration_server_blacklist").value;
                 let configuration_resources_blacklist = document.querySelector("#configuration_resources_blacklist").value;
 
                 configuration_text += "port:" + configuration_port + "\n";
                 configuration_text += "words_to_replace:" + configuration_words_to_replace + "\n";
+                configuration_text += "words_to_delete:" + configuration_words_to_delete + "\n";
                 configuration_text += "server_blacklist:" + configuration_server_blacklist + "\n";
                 configuration_text += "resources_blacklist:" + configuration_resources_blacklist + "\n";
 
                 let form_data = new FormData();
                 form_data.append("configuration", configuration_text);
 
-                fetch("http://localhost:{{configuration_port}}/proxy", {
+                fetch("http://localhost:{{configuration_port}}/proxy_config", {
                     method: 'POST',
                     headers: {
                         'Accept': 'text/html'
                     },
                     body: form_data
                 }).then(function (result) {
-                    return result.json();
-                }).then(function (result) {
-                    console.log(result);
+                    let submit_result_text = document.querySelector("#result");
+                    if(result.statusText == "OK")
+                    {
+                        submit_result_text.innerHTML = "Configuration mise à jour !";
+                        submit_result_text.style.backgroundColor = "green";
+                    } else {
+                        submit_result_text.innerHTML = "Erreur Configuration mise à jour !";
+                        submit_result_text.style.backgroundColor = "red";
+                    }
+                    return true;
                 });
             });
         </script>
