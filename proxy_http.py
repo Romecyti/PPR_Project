@@ -118,21 +118,28 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
 
     # Si requete GET
     if (re.search('GET', requete.decode())):
+        # Si localhost et proxy_config
         if nom_serveur == "localhost":
-                configuration = proxy_config.LectureConfigString("options.config")
-                dict = {"configuration_port": configuration["port"], 
-                        "configuration_words_to_replace": configuration["words_to_replace"], 
-                        "configuration_url_blacklist": configuration["url_blacklist"], 
-                        "configuration_resources_blacklist": configuration["resources_blacklist"]}
-                proxy_html.SendHTMLToClient("admin.html", socket_requete, dict)
-                return
+            array_requete = requete.decode().split("\n")
+            requete_first_line = array_requete[0].split(" ")
+            if(len(requete_first_line) == 3):
+                ressource = requete_first_line[1]
+                if(ressource == "/proxy_config"):
+                    print("Requete : \n\tPage de configuration localhost:8080/proxy_config\n")
+                    configuration = proxy_config.LectureConfigString("options.config")
+                    dict = {"configuration_port": configuration["port"], 
+                            "configuration_words_to_replace": configuration["words_to_replace"], 
+                            "configuration_url_blacklist": configuration["url_blacklist"], 
+                            "configuration_resources_blacklist": configuration["resources_blacklist"]}
+                    proxy_html.SendHTMLToClient("admin.html", socket_requete, dict)
+                    return
 
     #Si requete POST
     if (re.search('POST', requete.decode())):
         #dans ce cas, c'est une requete POST et l'on doit donc lire les arguments supplémentaire de la requête
         #ceux-ci se trouvent dans un bloc supplémentaire de la même forme qu'une requête
         arguments_requete, probleme_requete = LectureArgumentsRequetePost(requete, socket_requete)
-        print(arguments_requete)
+        return
     #end if
 
     #on regarde s'il y a eu un problème dans la lecture des arguments de la requete POST
