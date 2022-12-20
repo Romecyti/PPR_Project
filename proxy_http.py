@@ -4,6 +4,7 @@ import proxy_html
 import proxy_tcp
 import proxy_filtres
 import proxy_config
+import proxy_error_responses
 
 #fonction qui créer la socket principale du proxy
 def CreateProxysSocket(adresse_ip_proxy, port_socket_proxy) :
@@ -155,7 +156,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
         decoded_arguments_requete = arguments_requete.decode().replace("\r\n", "\n").split("\n")
         
         # Si c'est une requête de proxy_config
-        if nom_serveur == "localhost":
+        if not probleme_requete and nom_serveur == "localhost":
             array_requete = requete.decode().split("\n")
             requete_first_line = array_requete[0].split(" ")
             ressource = requete_first_line[1]
@@ -176,7 +177,6 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
     if not probleme_requete :
         requete += suite_requete
         socket_serveur, probleme_creation_socket_serveur = proxy_tcp.CreationSocketServeur(num_port_serveur, nom_serveur)
-
         #on regarde si la socket vers le serveur à pu être créée
         if not probleme_creation_socket_serveur :
             #si oui, alors on va envoyer la requete au serveur
@@ -200,14 +200,17 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 reponse = proxy_filtres.CallFiltre(reponse)
 
                 #on envoie ensuite toute la réponse au navigateur
-                #print(reponse, "\n\n")
                 socket_requete.sendall(reponse)
             else :
-                print("problème lecture entete réponse\n")
+                proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code400)
+                print("probleme lecture entete reponse\n")
             #end if
         else :
-            print("problème création socket serveur\n")
+            proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code503)
+            print("probleme creation socket serveur\n")
         #end if
+    else :
+        proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code400)
     #end if
     return 
 
@@ -217,7 +220,7 @@ def TraitementRequete(socket_requete) :
 
     #ici on peut faire filtrage sur url
     if not proxy_filtres.FiltreBlacklistServeur(requete) :
-        #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!! 
+        proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code403)
         socket_requete.close()
         return
 
@@ -226,19 +229,18 @@ def TraitementRequete(socket_requete) :
         #dans ce cas, on peut faire notre traitement
         #on va d'abord regarder quel est le protocole (http ou https)
         if (re.search('CONNECT', requete.decode())):
-            #dans ce cas, c'est le protocole https
-            #pour le moment, on ne le traite pas 
-            print('Requête : \n', requete, '\n')
+            #dans ce cas, c'est le protocole https et on ne le traite pas 
+            proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code403)
+            print('Requête HTTPS non traitee : \n', requete, '\n')
         else :
             #ici on peut faire filtrage sur ressources acceptées
             requete, requeteAccepter = proxy_filtres.FiltreBlacklistRessources(requete)
             if not requeteAccepter :
-                #ne pas oublier de renvoyer une erreur si le site n'est pas accepté !!!!!!!!!!
+                proxy_error_responses.ErrorResponse(aim_socket=socket_requete, code=proxy_error_responses.HTTPERRORCODE.code415) 
                 socket_requete.close()
                 return
             #dans ce cas, c'est une requete http
             TraitementRequeteHTTP( requete, socket_requete)
-
         #end if
     #end if
     #le traitement de la requete est finit, on peut fermer la socket et reccomencer la boucle

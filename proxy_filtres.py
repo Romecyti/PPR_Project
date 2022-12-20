@@ -11,6 +11,8 @@ def FiltreBlacklistRessources(entete_requete) :
     blacklisted_resources = proxy_config.LectureConfigArray("options.config")["resources_blacklist"]
     if(len(blacklisted_resources) == 0):
         return entete_requete, True
+    else :
+        blacklisted_resources.append("*/*")
 
     requete_autoriser = True
     entete_requete = entete_requete.decode().split("\n")
@@ -26,22 +28,32 @@ def FiltreBlacklistRessources(entete_requete) :
         return "\n".join(entete_requete).encode(), False
 
     #on fait maintenant un traitement sur la lignes des ressources
-    tableau_ressources_demander, suite_ligne = re.search(r'Accept: (?P<ressources>[^;]+)?(?P<suiteligne>[\s\S])?', entete_requete[num_ligne_ressource]).group('ressources','suiteligne')
-    tableau_ressources_demander = tableau_ressources_demander.split(",")
+    tableau_ressources_demander = re.match(r'Accept: (?P<ressource_demander>[\s\S]+)?',entete_requete[num_ligne_ressource]).group("ressource_demander")
 
-    if suite_ligne == None :
-        suite_ligne = ""
+    if tableau_ressources_demander == None :
+        return "\n".join(entete_requete).encode(), False
+    
+    tableau_ressources_demander = tableau_ressources_demander.split(",")
 
     # Est ce que les ressources sont acceptées ?
     tableau_ressources_accepter = []
     for ressource in tableau_ressources_demander :
         ressource_interdites = False
+        ressource = ressource.split(";")
         for blacklisted_res in blacklisted_resources :
-            if blacklisted_res == ressource :
+            if blacklisted_res == ressource[0] :
                 ressource_interdites = True
                 break
+            else :
+                blacklisted_res = blacklisted_res.split("/")
+                if (blacklisted_res[0] + "/*") == ressource[0] :
+                    ressource_interdites = True
+                    break
         if not ressource_interdites :
-            tableau_ressources_accepter.append(ressource)
+            if len(ressource) > 1 :
+                tableau_ressources_accepter.append(ressource[0] + ";" + ressource[1])
+            else :
+                tableau_ressources_accepter.append(ressource[0])
 
     #maintenant que le traitement est fait, si aucune ressource n'a été accepté, on refuse la requete
     if len(tableau_ressources_accepter) < 1 :
@@ -49,7 +61,7 @@ def FiltreBlacklistRessources(entete_requete) :
 
     #sinon on va reconstruire la requete avec les bonnes ressources
     ressources_accepter = ",".join(tableau_ressources_accepter)
-    entete_requete[num_ligne_ressource] = "Accept: " + ressources_accepter + suite_ligne
+    entete_requete[num_ligne_ressource] = "Accept: " + ressources_accepter
     entete_requete = "\n".join(entete_requete)
 
     return entete_requete.encode(), requete_autoriser
