@@ -65,6 +65,8 @@ def FiltreBlacklistServeur(entete_requete) :
             nom_serveur = re.search(r'Host: (?P<nom_serveur>[^\s:]+)?(:\d+)?', e).group('nom_serveur')
 
     for e in blacklisted_url :
+        if e=="":
+            continue
         if re.match(e, nom_serveur):
             accept = False
 
