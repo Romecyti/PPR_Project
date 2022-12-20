@@ -60,11 +60,31 @@ def FiltreBlacklistServeur(entete_requete) :
     blacklisted_url = proxy_config.LectureConfigArray("options.config")["server_blacklist"]
 
     for e in tab_requete :
-        if re.match(r'Host:[^\s\S]', e) :
+        if re.match(r'Host:[^\s\S]*', e) :
             nom_serveur = re.search(r'Host: (?P<nom_serveur>[^\s:]+)?(:\d+)?', e).group('nom_serveur')
 
     for e in blacklisted_url :
+        if e=="":
+            continue
         if re.match(e, nom_serveur):
             accept = False
 
     return accept
+
+######################################################
+#                                                    #
+#          FiltreWordsToReplaceAndDelete             #
+#                                                    #
+######################################################
+
+def FiltreWordsToReplaceAndDelete(reponse):
+    reponse=reponse.decode("ISO-8859-1")
+    wordsToReplace = proxy_config.LectureConfigArray("options.config")["words_to_replace"]
+    wordsToDelete = proxy_config.LectureConfigArray("options.config")["words_to_delete"]
+    for e in wordsToDelete:
+        #On ne supprime que les mots qui se trouve entre deux balises.
+        reponse = re.sub(r'(\>[^<]*?)'+e+'([^<]*?\<)', r'\1' + "" + r'\2', reponse,flags=re.IGNORECASE)
+    for i in range (0,len(wordsToReplace),2):
+        #On ne remplace que les mots qui se trouve entre deux balises.
+        reponse=re.sub(r'(\>[^<]*?)'+wordsToReplace[i]+'([^<]*?\<)', r'\1' + wordsToReplace[i+1] + r'\2', reponse,flags=re.IGNORECASE)
+    return reponse.encode("ISO-8859-1")

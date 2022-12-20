@@ -202,7 +202,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 #ici on peut faire traitement sur données réceptionnées 
                 #on peut faire des changement dans le texte et tout ça 
                 #attention a ne pas oubier de modifier la taille des données en réception si modification !!!!!!!!! (taille du message global moins taille entete message)
-
+                reponse=proxy_filtres.FiltreWordsToReplaceAndDelete(reponse)
                 #on envoie ensuite toute la réponse au navigateur
                 #print(reponse, "\n\n")
                 socket_requete.sendall(reponse)
