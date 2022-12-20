@@ -8,6 +8,10 @@ import proxy_config
 #############################################
 #fonction qui effectue un filtre sur les ressources acceptées et renvoies un booleen à false si la requete ne peut être envoyer (i.e. aucune ressources demandé n'est accepté)
 def FiltreBlacklistRessources(entete_requete) :
+    blacklisted_resources = proxy_config.LectureConfigArray("options.config")["resources_blacklist"]
+    if(len(blacklisted_resources) == 0):
+        return entete_requete, True
+
     requete_autoriser = True
     entete_requete = entete_requete.decode().split("\n")
 
@@ -24,7 +28,6 @@ def FiltreBlacklistRessources(entete_requete) :
     #on fait maintenant un traitement sur la lignes des ressources
     tableau_ressources_demander, suite_ligne = re.search(r'Accept: (?P<ressources>[^;]+)?(?P<suiteligne>[\s\S])?', entete_requete[num_ligne_ressource]).group('ressources','suiteligne')
     tableau_ressources_demander = tableau_ressources_demander.split(",")
-    blacklisted_resources = proxy_config.LectureConfigArray("options.config")["resources_blacklist"]
 
     # Est ce que les ressources sont accepté ?
     tableau_ressources_accepter = []
@@ -55,6 +58,10 @@ def FiltreBlacklistRessources(entete_requete) :
 #############################################
 #fonction qui effectue un filtre sur le nom du serveur web
 def FiltreBlacklistServeur(entete_requete) :
+    blacklisted_url = proxy_config.LectureConfigArray("options.config")["server_blacklist"]
+    if(len(blacklisted_url) == 0):
+        return True
+
     accept = True
     nom_serveur = ""
     tab_requete = entete_requete.decode().split("\n")
