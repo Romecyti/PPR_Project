@@ -92,7 +92,7 @@ def FiltreSuppressionMots(corps_requete : bytearray) :
     words_to_delete = proxy_config.LectureConfigArray("options.config")["words_to_delete"]
 
     for word in words_to_delete :
-        corps_requete = re.sub(word.encode(), b'', corps_requete)
+        corps_requete = re.sub(rb'(?P<before>\>[^\<]*?)'+ word.encode(), rb'\g<before>', corps_requete)
 
     return corps_requete
 
@@ -110,7 +110,7 @@ def FiltreRemplacementMots(corps_requete : bytearray):
         words_to_replace.append("")
 
     for i in range(0,len(words_to_replace), 2) :
-        corps_requete = re.sub(words_to_replace[i].encode(), words_to_replace[i+1].encode(), corps_requete)
+        corps_requete = re.sub(rb'(?P<before>\>[^\<]*?)'+ words_to_replace[i].encode(), rb'\g<before>' + words_to_replace[i+1].encode(), corps_requete)
 
     return corps_requete
 
