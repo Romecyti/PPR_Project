@@ -1,5 +1,8 @@
+[Celestin Marchand, Solal Coqueron, Alexandre Pierret]
+
 # PPR_Project
 Projet de Protocole et Programmation Réseaux de Master 1
+
 # Fonctionnement général
 Le proxy est un programme qui agit comme un intermédiaire entre votre ordinateur et Internet. Il reçoit les requêtes que vous envoyez à des sites web et les transmet à ces sites, puis il transmet les réponses de ces sites à votre ordinateur. En utilisant un proxy, vous pouvez contrôler et filtrer les informations qui passent entre votre ordinateur et Internet.
 
