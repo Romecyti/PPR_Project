@@ -17,6 +17,8 @@ Blocage d'accès à certaines URL : vous pouvez spécifier des adresses de sites
 
 Suppression de certaines ressources : vous pouvez spécifier des types de fichiers à supprimer de la navigation. Par exemple, vous pouvez supprimer tous les fichiers mp4 pour éviter de charger de gros fichiers inutiles.
 
+Injection de texte dans le titre : vous pouvez spécifier du texte à injecter directement dans le titre.
+
 # Configuration
 Pour utiliser le proxy il suffit de configurer votre navigateur afin qu'il utilise un proxy pour le protocole HTTP, ensuite il vous suffira simplement de run le fichier main.py.
 
