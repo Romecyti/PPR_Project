@@ -80,7 +80,6 @@ def FiltreBlacklistServeur(entete_requete) :
     accept = True
     nom_serveur = ""
     tab_requete = entete_requete.decode().split("\n")
-    blacklisted_url = proxy_config.LectureConfigArray("options.config")["server_blacklist"]
 
     for e in tab_requete :
         if re.match(r'Host:[\s\S]*', e) :
@@ -128,6 +127,22 @@ def FiltreRemplacementMots(corps_requete : bytearray):
 
 #############################################
 #                                           #
+#          FiltreInjectionTitre             #
+#                                           #
+#############################################
+#fonction qui effectue le remplacement des mots voulu par l'utilisateur
+def FiltreInjectionTitre(corps_requete : bytearray):
+    config_title = proxy_config.LectureConfigString("options.config")["title_injection"]
+    html_title = re.findall(rb"<title.*?>(.+?)</title>", corps_requete)
+
+    if(len(html_title) >= 1):
+        title = config_title.replace("{{title}}", html_title[0].decode())
+        corps_requete = re.sub(rb"<title.*?>(.+?)</title>", rb"<title>" + title.encode() + rb"</title>", corps_requete)
+
+    return corps_requete
+
+#############################################
+#                                           #
 #            AppelFiltresSurMots            #
 #                                           #
 #############################################
@@ -140,6 +155,7 @@ def CallFiltre(requete : bytearray) :
         return requete
 
     #sinon, alors la réponse contient bien des données et on peut les modifier
+    corps_requete = FiltreInjectionTitre(corps_requete)
     corps_requete = FiltreSuppressionMots(corps_requete)
     corps_requete = FiltreRemplacementMots(corps_requete)
 

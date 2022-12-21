@@ -141,6 +141,7 @@ def TraitementRequeteHTTP (requete, socket_requete : socket.socket) :
                 if(ressource == "/proxy_config"):
                     configuration = proxy_config.LectureConfigString("options.config")
                     dict = {"configuration_port": configuration["port"], 
+                            "configuration_title_injection": configuration["title_injection"], 
                             "configuration_words_to_replace": configuration["words_to_replace"], 
                             "configuration_words_to_delete": configuration["words_to_delete"], 
                             "configuration_server_blacklist": configuration["server_blacklist"],

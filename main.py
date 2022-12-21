@@ -1,4 +1,5 @@
 import proxy_http
+import proxy_config
 from _thread import start_new_thread
 
 #############################################
@@ -6,8 +7,15 @@ from _thread import start_new_thread
 #                  Main                     #
 #                                           #
 #############################################
-def main(adresse_ip_proxy = "", port_socket_proxy = 8080) :
+def main() :
+    adresse_ip_proxy = ""
+    port_socket_proxy = 8080
+    
+    config_port = proxy_config.LectureConfigString("options.config")["port"]
+    if(config_port != ""):
+        port_socket_proxy = int(config_port)
     socket_proxy = proxy_http.CreateProxysSocket(adresse_ip_proxy, port_socket_proxy)
+    print("Proxy {ip:" + adresse_ip_proxy + ", port:" + str(port_socket_proxy) + "}")
 
     #début d'écoute des requêtes faites au proxy
     while 1 :
