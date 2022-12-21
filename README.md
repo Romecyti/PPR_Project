@@ -20,4 +20,4 @@ Suppression de certaines ressources : vous pouvez spécifier des types de fichie
 # Configuration
 Pour utiliser le proxy il suffit de configurer votre navigateur afin qu'il utilise un proxy pour le protocole HTTP, ensuite il vous suffira simplement de run le fichier main.py.
 
-Pour mettre à jour les paramètres de filtrage, vous pouvez vous connecter à l'adresse http://localhost:8080/proxy_config (Si vous n'arrivez pas à vous connecter il se peut que le numéro de port ne soit pas le bon, vérifier dans le fichier proxy.config quel est le numéro de port). Vous pourrez alors modifier les différentes options de filtrage et enregistrer les modifications dans le fichier proxy.config. Pour que ces modifications soient appliquées relancez le fichier main.py.
+Pour mettre à jour les paramètres de filtrage, vous pouvez vous connecter à l'adresse http://localhost:8080/proxy_config (Si vous n'arrivez pas à vous connecter il se peut que le numéro de port ne soit pas le bon, vérifier dans le fichier proxy.config quel est le numéro de port). Vous pourrez alors modifier les différentes options de filtrage et enregistrer les modifications dans le fichier proxy.config.
